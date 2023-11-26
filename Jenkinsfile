@@ -51,6 +51,23 @@ pipeline {
                 }
             }
         }
+        
+        stage('Check and Install Python with pyenv') {
+            steps {
+                script {
+                    def pythonInstalled = sh(script: "python --version", returnStatus: true) == 0
+
+                    if (!pythonInstalled) {
+                        sh 'curl https://pyenv.run | bash'
+                        sh 'export PATH="$HOME/.pyenv/bin:$PATH"'
+                        sh 'eval "$(pyenv init -)"'
+                        sh 'eval "$(pyenv virtualenv-init -)"'
+                        sh 'pyenv install 3.9.7'
+                        sh 'pyenv global 3.9.7'
+                    }
+                }
+            }
+        }
     }
 }
 
