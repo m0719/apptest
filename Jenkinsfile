@@ -24,13 +24,13 @@ pipeline {
             }
         }
         
-        stage('Check Python') {
+        stage('Check and Install Python') {
             steps {
                 script {
                     def pythonInstalled = sh(script: "python --version", returnStatus: true) == 0
 
                     if (!pythonInstalled) {
-                        error('Python is not installed')
+                        sh 'sudo apt update && sudo apt install -y python'
                     }
                 }
             }
@@ -39,8 +39,8 @@ pipeline {
         stage('Build and Test') {
             steps {
                 script {
-                    dockerComposeBuild = sh(script: 'docker-compose build', returnStatus: true)
-                    dockerComposeTest = sh(script: 'docker-compose up --abort-on-container-exit', returnStatus: true)
+                    def dockerComposeBuild = sh(script: 'docker-compose build', returnStatus: true)
+                    def dockerComposeTest = sh(script: 'docker-compose up --abort-on-container-exit', returnStatus: true)
 
                     if (dockerComposeBuild != 0) {
                         error('Docker Compose build failed')
