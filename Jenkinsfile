@@ -2,68 +2,29 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
+        stage('Test') {
             steps {
-                git branch: 'main', url: 'https://github.com/m0719/apptest.git'
-            }
-        }
-        
-        stage('Check Docker and Docker Compose') {
-            steps {
-                script {
-                    def dockerInstalled = sh(script: "docker --version", returnStatus: true) == 0
-                    def dockerComposeInstalled = sh(script: "docker-compose --version", returnStatus: true) == 0
+                dir('app') {
+                    script {
+                        def dockerComposeTest = sh(script: 'docker-compose -f docker-compose.yml up --abort-on-container-exit', returnStatus: true)
 
-                    if (!dockerInstalled) {
-                        error('Docker is not installed')
-                    }
-                    if (!dockerComposeInstalled) {
-                        error('Docker Compose is not installed')
-                    }
-                }
-            }
-        }
-        
-        stage('Check and Install Python') {
-            steps {
-                script {
-                    def pythonInstalled = sh(script: "python --version", returnStatus: true) == 0
-
-                    if (!pythonInstalled) {
-                        sh 'sudo apt update && sudo apt install -y python'
+                        if (dockerComposeTest != 0) {
+                            error('Docker Compose test failed')
+                        }
                     }
                 }
             }
         }
 
-        stage('Build and Test') {
+        stage('Build') {
             steps {
-                script {
-                    def dockerComposeBuild = sh(script: 'docker-compose build', returnStatus: true)
-                    def dockerComposeTest = sh(script: 'docker-compose up --abort-on-container-exit', returnStatus: true)
+                dir('app') {
+                    script {
+                        def dockerComposeBuild = sh(script: 'docker-compose -f docker-compose.yml build', returnStatus: true)
 
-                    if (dockerComposeBuild != 0) {
-                        error('Docker Compose build failed')
-                    }
-                    if (dockerComposeTest != 0) {
-                        error('Docker Compose test failed')
-                    }
-                }
-            }
-        }
-        
-        stage('Check and Install Python with pyenv') {
-            steps {
-                script {
-                    def pythonInstalled = sh(script: "python --version", returnStatus: true) == 0
-
-                    if (!pythonInstalled) {
-                        sh 'curl https://pyenv.run | bash'
-                        sh 'export PATH="$HOME/.pyenv/bin:$PATH"'
-                        sh 'eval "$(pyenv init -)"'
-                        sh 'eval "$(pyenv virtualenv-init -)"'
-                        sh 'pyenv install 3.9.7'
-                        sh 'pyenv global 3.9.7'
+                        if (dockerComposeBuild != 0) {
+                            error('Docker Compose build failed')
+                        }
                     }
                 }
             }
